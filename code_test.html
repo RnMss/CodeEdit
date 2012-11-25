@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Code Edit Test</title>
+	<link href="style/code-edit.css" rel="stylesheet" type="text/css" />
+	<script type="text/javascript" src="script/common.js"> </script>
+	<script type="text/javascript" src="script/code-edit.js"></script>
+	<script>
+	var codeEdit = new CodeEdit();
+	function init() {
+		Ge("bdy").appendChild(codeEdit.getMain());
+		codeEdit.init();
+	}
+	</script>
+</head>
+<body onload="init()">
+<div style="width: 600px; height: 400px;" id="bdy">
+</div>
+</body>
+</html>
