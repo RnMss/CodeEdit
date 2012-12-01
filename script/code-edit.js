@@ -39,7 +39,6 @@ CodeEdit.prototype.init = function() {
 
 	{
 		this._makeLine(firstLine, 0);
-		Ae(divs.scroll, firstLine);
 	} {
 		var firstChar = Ce("span");	
 
@@ -57,7 +56,7 @@ CodeEdit.prototype.init = function() {
 		divs.viewport.tabIndex = -1;
 		OnEvent(divs.viewport, "blur" , Bind1(this, this._onBlur));
 		OnEvent(divs.viewport, "focus", Bind1(this, this._onFocus));
-		OnEvent(divs.scroll, "mousedown", Bind1(this, this._onMouseDown));
+		//OnEvent(divs.scroll, "mousedown", Bind1(this, this._onMouseDown));
 		OnEvent(divs.viewport, "keydown", Bind1(this, this._onKeyDown));
 		OnEvent(divs.viewport, "keypress", Bind1(this, this._onKeyPress));		
 	} {
@@ -83,8 +82,13 @@ CodeEdit.prototype._moveCaret = function(x, y) {
 		x = l[y].innerText.length;
 	this.caret.x = x; this.caret.y = y;
 	
-	s.top = this.divs.lines[y].offsetTop + "px";
-	s.left = x * this.char.width + "px";
+	cy = this.divs.lines[y].offsetTop;
+	cx = x * this.char.width;
+	s.top = cy + "px";
+	s.left = cx + "px";
+	if (cx > this.divs.viewport.offsetWidth) {
+		this.divs.scroll.scrollLeft = cx+2;
+	}
 }
 
 CodeEdit.prototype._makeLine = function (eDiv, lineNo) {
@@ -99,8 +103,15 @@ CodeEdit.prototype._makeLine = function (eDiv, lineNo) {
 	OnEvent(eDiv, "mousedown", function (e) {
 		return _this._myMouseDown(e, this, lineNo);
 	})
-	eDiv.lineNumber = lineNo;
-	this.divs.lines.splice(lineNo, 0, eDiv);
+
+	var ls = this.divs.lines;
+	if (lineNo >= ls.length) {
+		this.divs.scroll.appendChild(eDiv);
+	} else {
+		this.divs.scroll.insertBefore(eDiv, ls[lineNo]);
+	}
+	
+	ls.splice(lineNo, 0, eDiv);
 }
 
 CodeEdit.prototype._onBlur = function (event) {
@@ -119,7 +130,7 @@ CodeEdit.prototype._myMouseDown = function (e, t) {
 	var lineNo = 0;
 	for (var i in ls) {
 		if (t === ls[i]) {
-			lineNo = i;
+			lineNo = parseInt(i);
 			break;
 		}
 	}
@@ -129,13 +140,20 @@ CodeEdit.prototype._myMouseDown = function (e, t) {
 
 CodeEdit.prototype._onKeyPress = function (e) {
 	var c = this.caret;
-	var l = this.divs.lines[c.y];
+	var ls= this.divs.lines; 
+	var l = ls[c.y];
 	var s = l.innerText;
 	if (e.keyCode >= 32 || e.keyCode == 9) {
-		l.innerText = s.slice(0, c.x) + String.fromCharCode(e.keyCode) + s.slice(c.x);
+		l.innerText = s.slice(0, c.x) + Chr(e.keyCode) + s.slice(c.x);
 		this._moveCaret(c.x+1, c.y);
-	} else {
-		
+	} else if (e.keyCode == 13) {
+		l.innerText = s.slice(0, c.x);
+		var l2 = Ce("div");
+		l2.innerText = s.slice(c.x);
+		this._makeLine(l2, c.y+1);
+		this._moveCaret(0, c.y+1);
+		l2.newline = l.newline;
+		l.newline = true;
 	}
 	return true;
 }
@@ -151,6 +169,14 @@ CodeEdit.prototype._onKeyDown = function (e) {
 			if (c.x > 0) {
 				l.innerText = s.slice(0, c.x-1) + s.slice(c.x);
 				this._moveCaret(c.x - 1, c.y);
+			} else if (c.y > 0) {
+				l0 = ls[c.y - 1];
+				s0 = l0.innerText;
+				ls.splice(c.y, 1);
+				this.divs.scroll.removeChild(l);
+				this._moveCaret(s0.length, c.y - 1);
+				l0.innerText = s0 + l.innerText;
+				l0.newline = l.newline;
 			}
 		break;
 		case 37: // Left
@@ -187,12 +213,15 @@ CodeEdit.prototype._onKeyDown = function (e) {
 	return true;
 }
 
-function _init() {
-	var eLines = Ge("divScroll").childNodes;
-	for (var i in eLines) {
-		var node = eLines[i];
-		if (node.nodeType != 1) continue;
-		codeEditMakeLine( node );
+CodeEdit.prototype.getLines = function () {
+	var ls = this.divs.lines;
+	var res = new Array(ls.length);
+	for (var i in ls) {
+		res[i] = ls[i].innerText;
 	}
-} 
+	return res;
+}
 
+CodeEdit.prototype.getText = function () {
+	return this.getLines().join("\n");
+}

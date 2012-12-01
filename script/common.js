@@ -47,3 +47,7 @@ function Gp(p) {
 	var t = p.getBoundingClientRect();
 	return {x : t.left, y : t.top};
 }
+
+function Chr(a) {
+	return String.fromCharCode(a);
+}

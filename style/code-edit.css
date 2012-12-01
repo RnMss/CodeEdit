@@ -47,6 +47,7 @@ div {
 	color: #222;
 	border-bottom: 1pt dotted #eee;
 	position: relative;
+	height: 1.3em;
 }
 .CodeEdit-LHover {
 	background-color: #f8f8ff;
